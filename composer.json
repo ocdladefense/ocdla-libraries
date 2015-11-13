@@ -2,7 +2,7 @@
     "name": "clickpdx/ocdla", 
     "type": "library",
     "description": "Ocdla services.",
-    "keywords": ["http service","service"],
+    "keywords": ["ocdla service","service"],
     "homepage": "https://github.com/ocdladefense/ocdla-libraries", 
     "license": "MIT",
     "authors": [
