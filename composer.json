@@ -1,0 +1,17 @@
+{
+    "name": "clickpdx/ocdla", 
+    "type": "library",
+    "description": "Ocdla services.",
+    "keywords": ["http service","service"],
+    "homepage": "https://github.com/ocdladefense/ocdla-libraries", 
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jose Bernal", 
+            "email": "jbernal.web.dev@gmail.com", 
+            "homepage": "http://clickpdx.com",
+            "role": "Developer"
+        }
+    ]
+}
+
