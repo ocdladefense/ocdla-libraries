@@ -48,5 +48,24 @@ class UserDownload
 	{
 		return $this->info['id'];
 	}
-
+	public function __toString()
+	{
+		$str = "<table style='border:1px solid #666;'>
+			<thead>
+				<tr>
+				<th>FileName</th>
+				<th>Type</th>
+				<th>MemberId</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>foo</td>
+					<td>bar</td>
+					<td>baz</td>
+				</tr>
+			</tbody>
+		</table>";
+		return $str;
+	}
 }
