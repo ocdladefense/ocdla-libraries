@@ -21,6 +21,8 @@ class UserDownload
 	
 	const ownerpw = "ocdla";
 	
+	const ITEM_TITLE_SEPARATOR = '-';
+	
 	private $userId;
 	
 	/**
@@ -77,7 +79,7 @@ class UserDownload
 		
 		$this->userId 					= $info['memberId'];
 		
-		$this->productName			= substr($info["Item"],0,strpos($info["Item"],'-'));
+		$this->productName			= $this->parseProductName($info['Item']);
 		
 		$this->type 						= $info['SoftwareType'];
 		
@@ -102,6 +104,21 @@ class UserDownload
 		{
 			throw new \Exception("Class UserDownload: Associated file {$this->downloadLocation} does not exist on this filesystem.");
 		}
+	}
+
+	private function parseProductName($title)
+	{
+		return
+			$this->titleHasSeparator($title)
+					?
+					substr($info["Item"],0,strpos($info["Item"],self::ITEM_TITLE_SEPARATOR))
+					:
+					$title;
+	}
+	
+	private function titleHasSeparator($title)
+	{
+		return strpos($title,self::ITEM_TITLE_SEPARATOR)!==false;
 	}
 
 	public function fileExists()
@@ -217,6 +234,13 @@ class UserDownload
 		else throw new \Exception("Could not initialize zip creation within directory, {$sourceDir}.");
 	}
 	
+	public function copyToDownloads()
+	{
+		$source = self::$sourcePath . '/' . $this->userFilename;
+		$target = self::$destPath . '/' . $this->userFilename;
+		return copy($source,$target);
+	}
+	
 	private function createUserPdf()
 	{	
 		if ($this->type != "pdf") throw new \Exception('Class UserDownload: function createUserPdf being invoked on a non-pdf UserDownload instance!'); 
@@ -246,6 +270,12 @@ class UserDownload
 		{
 			return "<img style='width:18px;' src='/sites/default/files/icons/chrome_red_lock_details.png' alt='File doesn't exist.' />";
 		}
+	}
+
+	
+	public function getUrl()
+	{
+		return '/sites/default/files/downloads/'.$this->userFilename;
 	}
 
 	public function __toString()
