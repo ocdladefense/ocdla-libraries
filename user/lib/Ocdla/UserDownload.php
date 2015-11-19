@@ -111,7 +111,7 @@ class UserDownload
 		return
 			$this->titleHasSeparator($title)
 					?
-					substr($info["Item"],0,strpos($info["Item"],self::ITEM_TITLE_SEPARATOR))
+					substr($title,0,strpos($title,self::ITEM_TITLE_SEPARATOR))
 					:
 					$title;
 	}
@@ -205,11 +205,6 @@ class UserDownload
 	{
 		if( $this->type == "pdf" ) $this->createUserPdf();
 		else if( $this->type == "zip" ) $this->createUserZip();
-	}
-	
-	private function getFilepath()
-	{
-		return self::$sourcePath .'/' . $this->filename;
 	}
 	
 	private function userFileExists($basePath)
@@ -313,12 +308,6 @@ class UserDownload
 					<td colspan='6' style='text-align:center;background-color:#666;color:#fff;'>
 						Below is the user information for this file:
 					</td>
-				</tr>
-				<tr>
-					<td colspan='6' style='text-align:center;background-color:#666;color:#fff;'>
-						{$this->getFilepath()}
-					</td>
-				</tr>
 				<tr style='border-top:1px solid #666;'>
 					<td style='text-align:center;'>
 						{$userFileStatus}
