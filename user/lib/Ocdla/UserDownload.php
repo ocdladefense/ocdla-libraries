@@ -207,6 +207,11 @@ class UserDownload
 		else if( $this->type == "zip" ) $this->createUserZip();
 	}
 	
+	private function getFilepath()
+	{
+		return self::$sourcePath .'/' . $this->filename;
+	}
+	
 	private function userFileExists($basePath)
 	{
 		$path = isset($basePath)?$base_path:self::$sourcePath;
@@ -220,7 +225,6 @@ class UserDownload
 		$inFile = ".";
 		$outFile = "../{$this->userFilename}";
 		return $executable . " -{$options} {$outFile} {$inFile}";
-		// $cmd = "\"\"\\inetpub\\ocdla\\html\\sites\\ocdla\\modules\\zip_download\\zip\" -rv9 \"..\\$filename"."_".$username."\" \".\"\"";
 	}
 	
 	private function createUserZip()
@@ -309,6 +313,12 @@ class UserDownload
 					<td colspan='6' style='text-align:center;background-color:#666;color:#fff;'>
 						Below is the user information for this file:
 					</td>
+				</tr>
+				<tr>
+					<td colspan='6' style='text-align:center;background-color:#666;color:#fff;'>
+						{$this->getFilepath()}
+					</td>
+				</tr>
 				<tr style='border-top:1px solid #666;'>
 					<td style='text-align:center;'>
 						{$userFileStatus}
