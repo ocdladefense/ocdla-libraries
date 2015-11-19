@@ -220,6 +220,7 @@ class UserDownload
 		$inFile = ".";
 		$outFile = "../{$this->userFilename}";
 		return $executable . " -{$options} {$outFile} {$inFile}";
+		// $cmd = "\"\"\\inetpub\\ocdla\\html\\sites\\ocdla\\modules\\zip_download\\zip\" -rv9 \"..\\$filename"."_".$username."\" \".\"\"";
 	}
 	
 	private function createUserZip()
@@ -275,6 +276,49 @@ class UserDownload
 	public function getUrl()
 	{
 		return '/sites/default/files/downloads/'.$this->userFilename;
+	}
+	
+	public function getDownloadLink()
+	{
+		switch($this->type)
+		{
+			case 'zip':
+				return '/download/zip/'.$this->downloadId;
+				break;
+			case 'pdf':
+				return $this->getUrl();
+				break;
+		}
+	}
+
+	public function getMemberHtml()
+	{
+		$sourceFileStatus = $this->fileStatusIcon($this->fileExists());
+		$userFileStatus = $this->fileStatusIcon($this->userFileExists());
+									
+		$str = "<table style='margin-bottom:8px; width:475px; border:1px solid #666;'>
+			<thead>
+				<tr>
+					<th style='width:100px;text-align:center;'>File Ready?</th>
+					<th>File Name</th>
+					<th>Type</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td style='width:100px;text-align:center;'>
+						{$sourceFileStatus}
+					</td>
+					<td style='width:300px;text-align:center;'>
+						<a href='{$this->getDownloadLink()}' title='Download this file'>
+							{$this->filename}
+						</a>
+					</td>
+					<td style='text-align:center;'>{$this->type}</td>
+				</tr>
+			</tbody>
+		</table>";
+		return $str;
 	}
 
 	public function __toString()
