@@ -209,7 +209,7 @@ class UserDownload
 	
 	private function userFileExists($basePath)
 	{
-		$path = isset($basePath)?$base_path:self::$sourcePath;
+		$path = isset($basePath)?$base_path:self::$destPath;
 		return file_exists($path . "/{$this->userFilename}");
 	}
 	
