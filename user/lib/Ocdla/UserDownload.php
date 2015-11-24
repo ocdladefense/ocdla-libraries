@@ -19,7 +19,7 @@ class UserDownload
 	
 	public $type;
 	
-	const ownerpw = "ocdla";
+	static $ownerpw = "ocdla";
 	
 	const ITEM_TITLE_SEPARATOR = '-';
 	
@@ -220,7 +220,26 @@ class UserDownload
 		$inFile = ".";
 		$outFile = "../{$this->userFilename}";
 		return $executable . " -{$options} {$outFile} {$inFile}";
-		// $cmd = "\"\"\\inetpub\\ocdla\\html\\sites\\ocdla\\modules\\zip_download\\zip\" -rv9 \"..\\$filename"."_".$username."\" \".\"\"";
+	}
+	
+	private function getPdfCommand()
+	{
+		$executable = "/usr/bin/pdftk";
+		$options = "owner_pw ".self::$ownerpw." allow Printing CopyContents verbose";
+		$logFile = "/var/log/pdftk-web.log";
+		$inFile = self::$sourcePath . "/" .$this->filename;
+		$outFile = self::$destPath .'/'.$this->userFilename;
+		return $executable . " {$inFile} output {$outFile} {$options} >> {$logFile}";
+	}
+	
+	private function isPdf()
+	{
+		return $this->type==='pdf';
+	}
+	
+	private function getShellCommand()
+	{
+		return $this->isPdf()?$this->getPdfCommand():$this->getZipCommand();
 	}
 	
 	private function createUserZip()
@@ -245,18 +264,16 @@ class UserDownload
 	{	
 		if ($this->type != "pdf") throw new \Exception('Class UserDownload: function createUserPdf being invoked on a non-pdf UserDownload instance!'); 
 		
-		if (chdir(self::$downloadPath))
+		if (chdir(self::$sourcePath)&&$this->fileExists())
 		{
-			exec($pdftk_command, $output, $return_var);
+			exec($this->getPdfCommand(), $output, $return_var);
 		}
 		else
 		{
-			throw new \Exception("Could not change directory to {self::$downloadPath}.");
+			throw new \Exception("Could not change directory to ".self::$sourcePath);
 		}
 		
-		$pdftk_command = "/usr/bin/pdftk ".self::$uploadPath . "/{$this->filename} output " . self::$downloadPath . "/{$this->userFilename} owner_pw ".self::$ownerpw." allow Printing CopyContents verbose >> /var/log/pdftk-web.log";	
-		
-		exec($pdftk_command, $output, $return_var);
+		/*$pdftk_command = "/usr/bin/pdftk ".self::$sourcePath . "/{$this->filename} output " . self::$downloadPath . "/{$this->userFilename} owner_pw ".self::$ownerpw." allow Printing CopyContents verbose >> /var/log/pdftk-web.log";	*/
 		return $return_var;	
 	}
 
@@ -357,7 +374,7 @@ class UserDownload
 						{$userFileStatus}
 					</td>
 					<td colspan='5'>
-						{$this->getZipCommand()}
+						{$this->getShellCommand()}
 					</td>
 				</tr>
 			</tbody>
