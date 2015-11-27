@@ -19,7 +19,7 @@ class UserDownload
 	
 	public $type;
 	
-	const ownerpw = "ocdla";
+	static $ownerpw = "ocdla";
 	
 	const ITEM_TITLE_SEPARATOR = '-';
 	
@@ -39,7 +39,15 @@ class UserDownload
 	private $productName;
 	
 	private $downloadLocation;
+	
+	private $filename;
+	
+	private $userFilename;
 
+	private $orderId;
+	
+	private $userFullname;
+	
 	public function setDownloadPath($path)
 	{
 		self::$downloadPath = $path;
@@ -54,7 +62,7 @@ class UserDownload
 	{
 		if(empty($params['memberId'])||empty($params['productId']))
 		{
-			throw new \Exception('Class UserDownload: constructor expects parameter memberId.');
+			throw new \Exception(__METHOD__.' expects both memberId and productId parameters.');
 		}
 		$stmt = db_query('SELECT d.i AS downloadId FROM {downloads} d WHERE memberid=:memberId AND productid=:productId',
 			array('memberId'=>$params['memberId']
@@ -67,7 +75,7 @@ class UserDownload
 	{	
 		if(empty($downloadId)) throw new \Exception('Class UserDownload: constructor expects parameter downloadId.');
 		
-		$stmt = db_query('SELECT m.username, m.autoId, m.id AS memberId, cat.i AS productId, cat.DownloadLocation, cat.Item, cat.SoftwareType, d.* FROM {members} m LEFT JOIN {downloads} d ON(m.id=d.memberid) JOIN {catalog} cat ON(cat.i=d.productid) WHERE d.i=:downloadId',
+		$stmt = db_query('SELECT m.username, m.name_first, m.name_last, m.autoId, m.id AS memberId, cat.i AS productId, cat.DownloadLocation, cat.Item, cat.SoftwareType, d.* FROM {members} m LEFT JOIN {downloads} d ON(m.id=d.memberid) JOIN {catalog} cat ON(cat.i=d.productid) WHERE d.i=:downloadId',
 			array('downloadId'=>$downloadId),'pdo');
 		
 		$info = $stmt->fetch();
@@ -78,6 +86,10 @@ class UserDownload
 		$this->downloadId				= $info['i'];
 		
 		$this->userId 					= $info['memberId'];
+		
+		$this->userFullname			= $info['name_first'] . ' '.$info['name_last'];
+		
+		$this->orderId					= $info['Order_ID'];
 		
 		$this->productName			= $this->parseProductName($info['Item']);
 		
@@ -93,23 +105,11 @@ class UserDownload
 		$this->userFilename 		= "{$this->username}_{$this->filename}";
 		$this->userFilename			= $this->type == 'zip'? $this->userFilename .'.zip':
 																	$this->userFilename;
-		
-		clearstatcache();
-		/* one last error should be thrown if we can't find the file associated with this product */
-	
-		/**
-		 * Check to make sure the file referred to actually exists
-		 */
-		if(false&&!file_exists($this->downloadLocation))
-		{
-			throw new \Exception("Class UserDownload: Associated file {$this->downloadLocation} does not exist on this filesystem.");
-		}
 	}
 
 	private function parseProductName($title)
 	{
-		return
-			$this->titleHasSeparator($title)
+		return $this->titleHasSeparator($title)
 					?
 					substr($title,0,strpos($title,self::ITEM_TITLE_SEPARATOR))
 					:
@@ -135,6 +135,16 @@ class UserDownload
 	{
 		return $this->productName;
 	}
+	
+	public function getUserFullName()
+	{
+		return $this->userFullname;
+	}
+	
+	public function getOrderId()
+	{
+		return $this->orderId;
+	}
 
 	public function getProductId()
 	{
@@ -152,53 +162,17 @@ class UserDownload
 	}
 
 	public function setFileCreationTime($time=null)
-	{
-		$update = new DBQuery(
-			array(
-				"type"=>"update",
-				"tables"=>array(
-					0 => array(
-						"name"=>"downloads",
-						"op" => "",
-						"fields" => array()
-					)
-				),//tables
-				"fields"=>array(
-					"file_creation_time"=>$time
-				),//fields
-				"where"=>array(
-					"memberid={$this->userId}",
-					"AND productid={$this->productId}"
-				)
-			)
-		);
-		
-		$update->exec();
+	{	
+		$stmt = db_query('UPDATE {downloads} SET file_creation_time=:time WHERE i=:downloadId',
+			array('time'=>$time
+				,'downloadId'=>$this->downloadId),'pdo');
 	}
 
 	public function setNotificationTime($time = NULL)
 	{
-		$update = new DBQuery(
-			array(
-				"type"=>"update",
-				"tables"=>array(
-					0 => array(
-						"name"=>"downloads",
-						"op" => "",
-						"fields" => array()
-					)
-				),//tables
-				"fields"=>array(
-					"notification_time"=>$time
-				),//fields
-				"where"=>array(
-					"memberid={$this->userId}",
-					"productid={$this->productId}"
-				)
-			)
-		);
-		
-		$update->exec();
+		$stmt = db_query('UPDATE {downloads} SET notification_time=:time WHERE i=:downloadId',
+			array('time'=>$time
+				,'downloadId'=>$this->downloadId),'pdo');
 	}	
 	
 	public function createUserFile()
@@ -209,7 +183,7 @@ class UserDownload
 	
 	private function userFileExists($basePath)
 	{
-		$path = isset($basePath)?$base_path:self::$sourcePath;
+		$path = isset($basePath)?$base_path:self::$destPath;
 		return file_exists($path . "/{$this->userFilename}");
 	}
 	
@@ -220,7 +194,26 @@ class UserDownload
 		$inFile = ".";
 		$outFile = "../{$this->userFilename}";
 		return $executable . " -{$options} {$outFile} {$inFile}";
-		// $cmd = "\"\"\\inetpub\\ocdla\\html\\sites\\ocdla\\modules\\zip_download\\zip\" -rv9 \"..\\$filename"."_".$username."\" \".\"\"";
+	}
+	
+	private function getPdfCommand()
+	{
+		$executable = "/usr/bin/pdftk";
+		$options = "owner_pw ".self::$ownerpw." allow Printing CopyContents verbose";
+		$logFile = "/var/log/pdftk-web.log";
+		$inFile = self::$sourcePath . "/" .$this->filename;
+		$outFile = self::$destPath .'/'.$this->userFilename;
+		return $executable . " {$inFile} output {$outFile} {$options} >> {$logFile}";
+	}
+	
+	private function isPdf()
+	{
+		return $this->type==='pdf';
+	}
+	
+	private function getShellCommand()
+	{
+		return $this->isPdf()?$this->getPdfCommand():$this->getZipCommand();
 	}
 	
 	private function createUserZip()
@@ -245,18 +238,16 @@ class UserDownload
 	{	
 		if ($this->type != "pdf") throw new \Exception('Class UserDownload: function createUserPdf being invoked on a non-pdf UserDownload instance!'); 
 		
-		if (chdir(self::$downloadPath))
+		if (chdir(self::$sourcePath)&&$this->fileExists())
 		{
-			exec($pdftk_command, $output, $return_var);
+			exec($this->getPdfCommand(), $output, $return_var);
 		}
 		else
 		{
-			throw new \Exception("Could not change directory to {self::$downloadPath}.");
+			throw new \Exception("Could not change directory to ".self::$sourcePath .' or the file, '.$this->filename .', does not exist.');
 		}
 		
-		$pdftk_command = "/usr/bin/pdftk ".self::$uploadPath . "/{$this->filename} output " . self::$downloadPath . "/{$this->userFilename} owner_pw ".self::$ownerpw." allow Printing CopyContents verbose >> /var/log/pdftk-web.log";	
-		
-		exec($pdftk_command, $output, $return_var);
+		/*$pdftk_command = "/usr/bin/pdftk ".self::$sourcePath . "/{$this->filename} output " . self::$downloadPath . "/{$this->userFilename} owner_pw ".self::$ownerpw." allow Printing CopyContents verbose >> /var/log/pdftk-web.log";	*/
 		return $return_var;	
 	}
 
@@ -357,7 +348,7 @@ class UserDownload
 						{$userFileStatus}
 					</td>
 					<td colspan='5'>
-						{$this->getZipCommand()}
+						{$this->getShellCommand()}
 					</td>
 				</tr>
 			</tbody>
