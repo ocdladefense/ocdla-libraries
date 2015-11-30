@@ -45,7 +45,7 @@ class UserDownloadCollection implements \IteratorAggregate
 	
 	public function getUserFormattedEmailAddress()
 	{
-		return $this->member->getUserFirstLastName() . '<'.$this->member->getUserEmail() .'>';
+		return $this->member->getUserFirstLastName() . ' <'.$this->member->getUserEmail() .'>';
 	}
 	
 	public static function newFromMemberId($memberId)

@@ -136,6 +136,11 @@ class UserDownload
 		return $this->productName;
 	}
 	
+	public function getDownloadId()
+	{
+		return $this->downloadId;
+	}
+	
 	public function getUserFullName()
 	{
 		return $this->userFullname;

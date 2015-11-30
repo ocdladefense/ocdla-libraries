@@ -10,6 +10,8 @@ class UserDownloadManager
 	 */
 	private $c;
 	
+	private static $adminEmail = 'jbernal.web.dev@gmail.com';
+	
 	public function __construct()
 	{
 		$this->c = array();
@@ -20,31 +22,59 @@ class UserDownloadManager
 		$this->c[$memberId] = UserDownloadCollection::newFromMemberId($memberId);
 	}
 	
-	public function addDownload(UserDownload $download)
-	{
-		if(!isset($this->c[$memberId]))
-		{
-			$this->c[$memberId] = new UserDownloadCollection($download->getMemberId());
-		}
-		$this->c[$memberId]->add($download);
-	}
-	
 	public function populateDownloadsFromTimestamp($time)
 	{
 		// Query for downloads that have not been processed
-		$stmt = db_query('SELECT memberid AS memberId, i AS downloadId FROM {downloads} WHERE file_creation_time>=:time',array('time'=>$time),'pdo');
+		$stmt = db_query('SELECT memberid AS memberId, i AS downloadId FROM {downloads} WHERE notification_time IS NULL AND file_creation_time>=:time',array('time'=>$time),'pdo');
 		$results = $stmt->fetchAll();
-		$c = new UserDownloadCollection();
 		array_walk($results,function($entry){
 			$this->addDownload(new UserDownload($entry['downloadId']));
 		});
 	}
 	
+	public function addDownload(UserDownload $download)
+	{
+		if(!isset($this->c[$download->getMemberId()]))
+		{
+			$this->c[$download->getMemberId()] = new UserDownloadCollection($download->getMemberId());
+		}
+		$this->c[$download->getMemberId()]->add($download);
+	}
+	
 	public function notify()
 	{
 		array_walk($this->c,function(UserDownloadCollection $downloads){
-			$this->sendEmailNotification($downloads);
+			try
+			{
+				$this->sendEmailNotification($downloads);
+				$this->updateFileNotificationTime($downloads);
+			}
+			catch(\Exception $e)
+			{
+				print $e;
+			}
 		});
+	}
+	
+	public function notifyAdmin()
+	{
+		array_walk($this->c,function(UserDownloadCollection $downloads){
+			try
+			{
+				$this->sendAdminEmailNotification($downloads);
+				$this->updateFileNotificationTime($downloads);
+			}
+			catch(\Exception $e)
+			{
+				print $e;
+			}
+		});
+	}
+	
+	public function getDownloadLink($type,$productid,$contact_id)
+	{
+		$link = $type == "pdf" ? "https://www.ocdla.org/index.php?q=download/pdf&productid={$productid}" : "https://www.ocdla.org/index.php?q=download/zip&productid={$productid}&contact_id={$contact_id}";
+		return "https://member.ocdla.org/my-downloads";
 	}
 	
 	public function sendEmailNotification($downloads)
@@ -53,22 +83,32 @@ class UserDownloadManager
 		\sendMail($bag->getUsersEmailAddress(), $bag->getSubject(), array(
 			'name'			=> $downloads->getUsersFirstLastName(),
 			'links'			=> $bag->getEmailBody()));
-	
-		// once the email has been sent out for this UserDownload
-		// modify the notification_time field
-		// $result = $this->updateFileNotificationTime($ids);
 	}
 	
-	public function updateFileNotificationTime($downloadIds)
+	public function sendAdminEmailNotification($downloads)
 	{
-		if (empty($downloadIds)||count($downloadIds)<1) return false;
-		$result = db_query("UPDATE {downloads} SET notification_time=:1 WHERE i IN(:2)",
-			array(time(),$downloadIds));
-		return $result;
+		$bag = $downloads->getEmailBag();
+		\sendMail(self::$adminEmail, $bag->getSubject(), array(
+			'name'			=> $downloads->getUsersFirstLastName(),
+			'links'			=> $bag->getEmailBody()));
+	}
+	
+	public function updateFileNotificationTime(UserDownloadCollection $coll)
+	{
+		$time = time();
+		$coll->map(function($download) use($time){
+		$result = db_query("UPDATE {downloads} SET notification_time=:1 WHERE i=:2",
+			array($time,$download->getDownloadId()),'mysql',true);
+		});
 	}
 	
 	public function __toString()
 	{
-		return (string)$this->c;
+		$str = '';
+		foreach($this->c as $coll)
+		{
+			$str .= (string)$coll;
+		}
+		return $str;
 	}
 }
