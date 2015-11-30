@@ -34,6 +34,10 @@ class UserDownloadManager
 	
 	public function addDownload(UserDownload $download)
 	{
+		if(empty($download->getMemberId()))
+		{
+			throw new \Exception('This download must belong to a member but no memberid was given.');
+		}
 		if(!isset($this->c[$download->getMemberId()]))
 		{
 			$this->c[$download->getMemberId()] = new UserDownloadCollection($download->getMemberId());

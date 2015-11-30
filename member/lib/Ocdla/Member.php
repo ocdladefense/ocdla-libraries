@@ -8,7 +8,7 @@ class Member
 	
 	public function __construct($memberId)
 	{
-		if (!isset($memberId)) throw new \Exception('invalid retrieval of member record in '.__FUNCTION__);	
+		if (!isset($memberId)) throw new \Exception('Invalid retrieval of member record in '.__FUNCTION__);	
 		
 		$stmt = db_query("SELECT m.*, ci.value AS email FROM {members} m LEFT JOIN {member_contact_info} ci ON(ci.contact_id=m.id) WHERE m.id=:1 AND type='email'",array($memberId),'mysql');
 		
