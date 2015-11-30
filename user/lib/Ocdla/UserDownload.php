@@ -183,8 +183,7 @@ class UserDownload
 	
 	private function userFileExists($basePath)
 	{
-		$path = isset($basePath)?$base_path:self::$destPath;
-		return file_exists($path . "/{$this->userFilename}");
+		return file_exists((isset($basePath)?$base_path:self::$destPath) . "/{$this->userFilename}");
 	}
 	
 	private function getZipCommand()
@@ -264,9 +263,17 @@ class UserDownload
 	}
 
 	
-	public function getUrl()
+	public function getUrl($absolute=false)
 	{
-		return '/sites/default/files/downloads/'.$this->userFilename;
+		$path = '/sites/default/files/downloads';
+		return $absolute ?
+			'https://members.ocdla.org'.$path .'/'. $this->userFilename
+		:$path. '/'.$this->userFilename;
+	}
+	
+	public function getDownloadLinkHtml()
+	{
+		return "<a href='{$this->getUrl(true)}'>{$this->getProductName()}</a>";
 	}
 	
 	public function getDownloadLink()
