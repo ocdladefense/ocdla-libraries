@@ -309,6 +309,11 @@ class UserDownload
 			</thead>
 			<tbody>
 				<tr>
+					<td colspan='3'>
+						This file is for {$this->getUserFullName()}.
+					</td>
+				</tr>
+				<tr>
 					<td style='width:100px;text-align:center;'>
 						{$sourceFileStatus}
 					</td>
