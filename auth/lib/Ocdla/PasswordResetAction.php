@@ -29,28 +29,15 @@ class PasswordResetAction
 			array('token'=>$token),'pdo')->fetch();
 		return $this;
 	}
-	
-	private static function getResetEntryMemberId($token)
-	{
-		return db_query("SELECT id AS memberId FROM {{self::$resetTable}} p JOIN {members} m ON(m.username=p.username) WHERE token=:token",
-			array('token'=>$token),'pdo')->fetch();
-	}
-	/**
-	 * Class constructor
-	 *
-	 * Construct a new PasswordResetAction object for a user with the
-	 * appropriate memberId.
-	 *
-	 * @int memberId		The memberId (`members.id`) of the member whose password is to be reset.
 
-	public function __construct()
-	{
-		$this->username = $username;
-	}
-	 */
 	public function setUsername($username)
 	{
 		$this->username = $username;
+	}
+	
+	private function getUsername()
+	{
+		return $this->data['username'];
 	}
 	
 	private function getToken()
@@ -58,10 +45,7 @@ class PasswordResetAction
 		return $this->data['token'];
 	}
 	
-	private function getUsername()
-	{
-		return $this->data['username'];
-	}
+
 	
 	private function getMemberId()
 	{
@@ -101,7 +85,7 @@ class PasswordResetAction
 	public function invalidateAll()
 	{
 		db_query("UPDATE {".self::$resetTable."} SET invalid=1 WHERE username=:username",
-			array('username'=>$this->username),'pdo');
+			array('username'=>$this->getUsername()),'pdo');
 	}
 	
 	public function invalidate()
