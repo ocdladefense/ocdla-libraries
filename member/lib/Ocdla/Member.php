@@ -41,7 +41,8 @@ class Member
 	
 	public static function newFromUsername($username)
 	{
-		
+		$id = db_query("SELECT m.id AS memberId FROM {members} m WHERE username=:username",array('username'=>$username),'pdo')->fetch();
+		return new Member($id['memberId']);
 	}
 
 	
@@ -53,6 +54,39 @@ class Member
 			'memberId' => 25060,
 			'email'			=> 'jbernal.web.dev@gmail.com'
 		);
+	}
+	
+	public function getUsername()
+	{
+		return $this->data['username'];
+	}
+	
+	public function setPassword($plainTextPassword)
+	{
+		$this->password = md5($plainTextPassword);
+	}
+
+	
+	
+	
+	public function savePassword($password)
+	{
+		// Update members set password=md5($password);
+	}	
+	
+	private function saveOcdlaPassword()
+	{
+	
+	}
+	
+	private function saveLodPassword()
+	{
+	
+	}
+	
+	private function saveLodTestPassword()
+	{
+	
 	}
 	
 	public function getMemberId()
@@ -83,5 +117,9 @@ class Member
 	{	
 		return $this->data['value'];
 	}
-	
+
+	public function __toString()
+	{
+		return "Member object, Username: {$this->getUserFirstLastName()}.";
+	}	
 }
