@@ -1,5 +1,7 @@
 <?php
 
+use Clickpdx\Core\Routing\RouteException;
+
 namespace Ocdla;
 
 
@@ -48,14 +50,11 @@ class UserDownload
 	
 	private $userFullname;
 	
+	private $exitCode;
+	
 	public function setDownloadPath($path)
 	{
 		self::$downloadPath = $path;
-	}
-
-	public static function newFromDownloadId($id)
-	{
-	
 	}
 	
 	public static function newFromParams($params)
@@ -121,10 +120,7 @@ class UserDownload
 		return strpos($title,self::ITEM_TITLE_SEPARATOR)!==false;
 	}
 
-	public function fileExists()
-	{
-		return file_exists(self::$sourcePath .'/' . $this->filename);
-	}
+
 
 	public function getDownloadType()
 	{
@@ -182,11 +178,59 @@ class UserDownload
 	
 	public function createUserFile()
 	{
-		if( $this->type == "pdf" ) $this->createUserPdf();
-		else if( $this->type == "zip" ) $this->createUserZip();
+		return 		$this->exitCode = ($this->type == "pdf" ?
+			$this->createUserPdf() :
+			$this->createUserZip());
 	}
 	
-	private function userFileExists($basePath)
+	private function createUserZip()
+	{
+		if($this->type!='zip')
+		{
+			throw new \Exception("Cannot create a zip archive from a non-zip source!");
+		}
+		$sourceDir = self::$sourcePath . '/' . $this->filename;
+		if(chdir($sourceDir))
+		{
+			exec($this->getZipCommand(), $output, $return_var);
+		}
+		else
+		{
+			throw new \Exception("Could not initialize zip creation within directory, {$sourceDir}.");
+		}
+		return $return_var;	
+	}
+	
+	
+	private function createUserPdf()
+	{	
+		if ($this->type != "pdf")
+		{
+			throw new \Exception('Class UserDownload: function createUserPdf being invoked on a non-pdf UserDownload instance!'); 
+		}
+		
+		if (chdir(self::$sourcePath)&&$this->fileExists())
+		{
+			exec($this->getPdfCommand(), $output, $return_var);
+		}
+		else
+		{
+			throw new \Exception("Could not change directory to ".self::$sourcePath .' or the file, '.$this->filename .', does not exist.');
+		}
+		return $return_var;
+	}
+	
+	public function getExitCode()
+	{
+		return $this->exitCode;
+	}
+	
+	public function fileExists()
+	{
+		return file_exists(self::$sourcePath .'/' . $this->filename);
+	}
+	
+	public function userFileExists($basePath)
 	{
 		return file_exists((isset($basePath)?$base_path:self::$destPath) . "/{$this->userFilename}");
 	}
@@ -196,7 +240,7 @@ class UserDownload
 		$executable = "/usr/bin/zip";
 		$options = "rv9";
 		$inFile = ".";
-		$outFile = "../{$this->userFilename}";
+		$outFile = self::$destPath ."/{$this->userFilename}";
 		return $executable . " -{$options} {$outFile} {$inFile}";
 	}
 	
@@ -220,16 +264,7 @@ class UserDownload
 		return $this->isPdf()?$this->getPdfCommand():$this->getZipCommand();
 	}
 	
-	private function createUserZip()
-	{
-		if($this->type!='zip') throw new \Exception("Cannot create a zip archive from a non-zip source!");
-		$sourceDir = self::$sourcePath . '/' . $this->filename;
-		if(chdir($sourceDir))
-		{
-			return shell_exec($this->getZipCommand());
-		}
-		else throw new \Exception("Could not initialize zip creation within directory, {$sourceDir}.");
-	}
+
 	
 	public function copyToDownloads()
 	{
@@ -237,23 +272,7 @@ class UserDownload
 		$target = self::$destPath . '/' . $this->userFilename;
 		return copy($source,$target);
 	}
-	
-	private function createUserPdf()
-	{	
-		if ($this->type != "pdf") throw new \Exception('Class UserDownload: function createUserPdf being invoked on a non-pdf UserDownload instance!'); 
-		
-		if (chdir(self::$sourcePath)&&$this->fileExists())
-		{
-			exec($this->getPdfCommand(), $output, $return_var);
-		}
-		else
-		{
-			throw new \Exception("Could not change directory to ".self::$sourcePath .' or the file, '.$this->filename .', does not exist.');
-		}
-		
-		/*$pdftk_command = "/usr/bin/pdftk ".self::$sourcePath . "/{$this->filename} output " . self::$downloadPath . "/{$this->userFilename} owner_pw ".self::$ownerpw." allow Printing CopyContents verbose >> /var/log/pdftk-web.log";	*/
-		return $return_var;	
-	}
+
 
 	private function fileStatusIcon($boolean)
 	{
