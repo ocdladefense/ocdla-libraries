@@ -109,6 +109,7 @@ class PasswordResetAction
 	
 	private function resetLodPassword($pwd)
 	{
+		// UPDATE lodwiki.user SET user_password=CONCAT(':A:',MD5('somerjoe')) WHERE user_name='Et_may';
 		db_query("UPDATE {lodusers} SET user_password=CONCAT(:prefix,MD5(:password)) WHERE user_name=:username",
 			array(
 				'prefix' 			=> ':A:',
