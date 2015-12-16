@@ -116,7 +116,7 @@ class PasswordResetAction
 				'password'		=> $pwd,
 				'username' 		=> ucfirst($this->getUsername())
 			)
-		,'pdo');
+		,'pdo',true);
 	}
 	
 }
