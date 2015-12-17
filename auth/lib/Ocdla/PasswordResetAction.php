@@ -15,7 +15,7 @@ class PasswordResetAction
 {
 	private static $resetTable = 'members_password_reset';
 	
-	private $data;
+	private $data = array();
 	
 	public static function newFromToken($token)
 	{
@@ -25,14 +25,14 @@ class PasswordResetAction
 	
 	public function loadFromToken($token)
 	{
-		$this->data = db_query("SELECT * FROM {".self::$resetTable."} p JOIN {members} m ON(m.username=p.username) WHERE token=:token",
+		$this->data = db_query("SELECT m.id, m.username, token, invalid FROM {".self::$resetTable."} p JOIN {members} m ON(m.username=p.username) WHERE token=:token",
 			array('token'=>$token),'pdo')->fetch();
 		return $this;
 	}
 
 	public function setUsername($username)
 	{
-		$this->username = $username;
+		$this->data['username'] = $username;
 	}
 	
 	private function getUsername()
@@ -44,9 +44,7 @@ class PasswordResetAction
 	{
 		return $this->data['token'];
 	}
-	
 
-	
 	private function getMemberId()
 	{
 		return $this->data['id'];
@@ -61,17 +59,11 @@ class PasswordResetAction
 		);
 	}
 	
-	public function getResetEntry($token)
-	{
-		$this->data = db_query("SELECT * FROM {{self::$resetTable}} WHERE token=:token",
-			array('token'=>$token),'pdo')->fetch();
-	}
-	
 	public function createResetEntry()
 	{
 		$token = $this->generateToken();
 		$insert = db_query("INSERT INTO {".self::$resetTable."} (username,token) VALUES(:username,:token)",
-			array('username'=>$this->username, 'token'=>$token),'pdo');
+			array('username'=>$this->getUsername(), 'token'=>$token),'pdo');
 		return $token;
 	}
 	
@@ -79,7 +71,6 @@ class PasswordResetAction
 	{
 		$bytes = openssl_random_pseudo_bytes(8);
 		return bin2hex($bytes);
-		// return new MemberPassword::newFromRandom();
 	}
 	
 	public function invalidateAll()
@@ -102,14 +93,13 @@ class PasswordResetAction
 	
 	private function resetOcdlaPassword($pwd)
 	{
-		db_query("UPDATE {members} m SET password=MD5(:password) WHERE id=:memberId",
+		db_query("UPDATE {members} SET password=MD5(:password) WHERE id=:memberId",
 			array('password'=> $pwd,
 				'memberId' => $this->getMemberId()),'pdo');
 	}
 	
 	private function resetLodPassword($pwd)
 	{
-		// UPDATE lodwiki.user SET user_password=CONCAT(':A:',MD5('somerjoe')) WHERE user_name='Et_may';
 		db_query("UPDATE {lodusers} SET user_password=CONCAT(:prefix,MD5(:password)) WHERE user_name=:username",
 			array(
 				'prefix' 			=> ':A:',
