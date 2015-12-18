@@ -347,6 +347,42 @@ class UserDownload
 		</table>";
 		return $str;
 	}
+	
+	
+	public function getMemberHtmlInactive()
+	{
+		$sourceFileStatus = $this->fileStatusIcon(false);//$this->fileExists());
+		$userFileStatus = $this->fileStatusIcon(false);//$this->userFileExists());
+									
+		$str = "<table style='margin-bottom:8px; width:475px; border:1px solid #666;'>
+			<thead>
+				<tr>
+					<th style='width:100px;text-align:center;'>File Ready?</th>
+					<th>File Name</th>
+					<th>Type</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td colspan='3'>
+						This file is for {$this->getUserFullName()}.
+					</td>
+				</tr>
+				<tr>
+					<td style='width:100px;text-align:center;'>
+						{$sourceFileStatus}
+					</td>
+					<td style='width:300px;text-align:center;'>
+						<a href='#' style='color:#999;' onclick='return false;' title='This file is inactive.'>
+							{$this->filename}
+						</a>
+					</td>
+					<td style='text-align:center;'>{$this->type}</td>
+				</tr>
+			</tbody>
+		</table>";
+		return $str;
+	}
 
 	public function __toString()
 	{
