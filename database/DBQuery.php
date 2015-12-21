@@ -23,7 +23,7 @@ class DBQuery {
 		{
 			$p=get_resource_info('default');
 			$this->dbh = mysql_connect($p['hostname'],$p['username'],$p['password']);
-			mysql_query('use ocdla',$this->dbh);
+			mysql_query("use {$p['database']}",$this->dbh);
 		}
 	}
 	
