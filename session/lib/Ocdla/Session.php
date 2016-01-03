@@ -103,15 +103,15 @@ class Session
 	  // Create time stamp
 	  $access = time();
 	  
-	  $sql = Database::finalizeSql("INSERT INTO {my_aspnet_Sessions} (SessionID, Created, Expires, UserID, Data) VALUES (:sessionId, :created, :expires, :userid, :data) ON DUPLICATE KEY UPDATE Data=VALUES(Data)");
+	  $sql = Database::finalizeSql("INSERT INTO {my_aspnet_Sessions} (SessionID, Created, Expires, UserID, Data) VALUES (:sessionId, :created, :expires, :userid, :data) ON DUPLICATE KEY UPDATE Data=VALUES(Data), Expires=VALUES(Expires)");
 	  // Set query  
 	  $stmt = $this->db->prepare($sql);
 	  
 	  // Bind data
 	  $stmt->bindValue(':sessionId', $id);
 	  $stmt->bindValue(':userid', $this->UserID);	  
-	  $stmt->bindValue(':created', OCDLA_SESSION_CREATED);
-	  $stmt->bindValue(':expires', OCDLA_SESSION_EXPIRES);
+	  $stmt->bindValue(':created', date('Y-m-d'));
+	  $stmt->bindValue(':expires', date('Y-m-d', time()+60*60*24*30));
 	  $stmt->bindValue(':data', $data);
  
 	  // Attempt Execution
@@ -144,7 +144,7 @@ class Session
 	  // Calculate what is to be deemed old
 	  $old = time() - $max;
  
- 		$sql = Database::finalizeSql("DELETE FROM {my_aspnet_Sessions} WHERE Created < :old");
+ 		$sql = Database::finalizeSql("DELETE FROM {my_aspnet_Sessions} WHERE Expires < :old");
  		
 	  // Set query
 	  $this->db->query($sql);
