@@ -11,13 +11,11 @@ class Session
    * Db Object
    */
 	protected $db;
-	
+	protected $conn;
  	protected $sessionid;
- 	
  	protected $UserID = null;
  	
  	protected $log = array();
- 	
  	protected $errors = array();
  
 	public function __construct($frameworkObject=null)
@@ -36,6 +34,10 @@ class Session
 			$this->db = get_connection();
 		}
 
+		// Instantiate a standard PDO connection
+		// Do this for now because Doctrine may be buggy with certain queries
+		$this->conn = new \Ocdla\PDO();
+	  
 		// Set handler to overide SESSION
 		session_set_save_handler(
 		  array($this, "_open"),
@@ -77,13 +79,17 @@ class Session
 	{
 		$sql = Database::finalizeSql("SELECT * FROM {my_aspnet_Sessions} WHERE SessionID = :id");
 		$stmt = $this->db->prepare($sql);
-		$stmt->bindValue("id", $id);
+		$stmt->bindValue(":id", $id);
 
 	  // Return the session data,
 	  // If successful
-	  if($stmt->execute()&&$session = $stmt->fetch())
+	  if($stmt->execute())
 	  {
+			// Save returned row
+			$session = $stmt->fetch();
 			$this->UserID = $session['UserID'];
+
+			// Return the data
 			return $session['Data'];
 	  }
 	  else return '';
@@ -97,16 +103,16 @@ class Session
 	  // Create time stamp
 	  $access = time();
 	  
-	  $sql = Database::finalizeSql("INSERT INTO {my_aspnet_Sessions} (SessionID, Created, Expires, UserID, Data) VALUES (:id, :created, :expires, :userid, :data) ON DUPLICATE KEY UPDATE Data=VALUES(Data), Expires=VALUES(Expires)");
+	  $sql = Database::finalizeSql("INSERT INTO {my_aspnet_Sessions} (SessionID, Created, Expires, UserID, Data) VALUES (:sessionId, :created, :expires, :userid, :data) ON DUPLICATE KEY UPDATE Data=VALUES(Data), Expires=VALUES(Expires)");
 	  // Set query  
 	  $stmt = $this->db->prepare($sql);
 	  
 	  // Bind data
-	  $stmt->bindValue('id', $id);
-	  $stmt->bindValue('userid', $this->UserID);	  
-	  $stmt->bindValue('created', date('Y-m-d'));
-	  $stmt->bindValue('expires', date('Y-m-d', time()+60*60*24*30));
-	  $stmt->bindValue('data', $data);
+	  $stmt->bindValue(':sessionId', $id);
+	  $stmt->bindValue(':userid', $this->UserID);	  
+	  $stmt->bindValue(':created', date('Y-m-d'));
+	  $stmt->bindValue(':expires', date('Y-m-d', time()+60*60*24*30));
+	  $stmt->bindValue(':data', $data);
  
 	  // Attempt Execution
 	  // If successful
@@ -125,7 +131,7 @@ class Session
 	  $stmt = $this->db->prepare($sql);
 	  
 	  // Bind data
-	  $stmt->bindValue('id', $id);
+	  $stmt->bindValue(':id', $id);
 	  
 	  // Attempt execution
 	  // If successful
@@ -138,13 +144,13 @@ class Session
 	  // Calculate what is to be deemed old
 	  $old = time() - $max;
  
- 		$sql = Database::finalizeSql("DELETE FROM {my_aspnet_Sessions} WHERE Expires < :expires");
+ 		$sql = Database::finalizeSql("DELETE FROM {my_aspnet_Sessions} WHERE Expires < :old");
  		
 	  // Set query
-	  $this->db->prepare($sql);
+	  $this->db->query($sql);
 	  
 	  // Bind data
-	  $this->db->bindValue('expires', $old);
+	  $this->db->bind(':old', $old);
 	  
 	  // Attempt execution
 	  if($this->db->execute()) return true;
@@ -159,9 +165,9 @@ class Session
 	
 	public function getFields()
 	{
-		$sql = Database::finalizeSql('SELECT * FROM {my_aspnet_Sessions} sess LEFT JOIN {members} m ON(m.autoId=sess.UserID) WHERE SessionID = :id');
+		$sql = Database::finalizeSql('SELECT * FROM {my_aspnet_Sessions} sess LEFT JOIN {members} m ON(m.autoId=sess.UserID) WHERE SessionID = :sessionid');
 		$stmt = $this->db->prepare($sql);
-		$stmt->bindValue('id', $this->getSessionId());
+		$stmt->bindValue(':sessionid', $this->getSessionId());
 		$stmt->execute();
 		return $stmt->fetch();
 	}
@@ -177,14 +183,14 @@ class Session
 		}
 		$sql = Database::finalizeSql('SELECT autoId FROM {members} WHERE username = :username AND password = md5(:password)');
 		$stmt = $this->db->prepare($sql);
-		$stmt->bindValue('username', $username);
-		$stmt->bindValue('password', $password);
+		$stmt->bindValue(':username', $username);
+		$stmt->bindValue(':password', $password);
 		
 		if( $stmt->execute() ) {
 			$result = $stmt->fetch();
 			if($result['autoId']) {
 				$log[] = $result['autoId'];
-				$log[] = $this->getSessionId();
+				$log[] = session_id();
 				if($this->authenticateSession($result['autoId'])) {
 					$log[] = 'Your id was successfully updated.';
 				} else {
@@ -243,11 +249,9 @@ class Session
 	{
 		// No need to re-authenticate
 		if($this->hasAuthenticatedSession()) return true;
-		$query = Database::finalizeSql("UPDATE {my_aspnet_Sessions} SET UserID=:userid WHERE SessionID=:id");
-		$stmt = $this->db->prepare($query);
-		$stmt->bindValue("userid",$UserID);
-		$stmt->bindValue("id",$this->getSessionId());
-		$stmt->execute();
+		$query = Database::finalizeSql("UPDATE {my_aspnet_Sessions} SET UserID=? WHERE SessionID=?");
+		$stmt = $this->conn->db->prepare($query);
+		$stmt->execute(array($UserID, session_id()));
 		$affected_rows = $stmt->rowCount();  
 		if($affected_rows > 0)
 		{
@@ -265,11 +269,9 @@ class Session
 	public function hasAuthenticatedSession()
 	{
 		if(!$this->UserID) return false;
-		$sql = Database::finalizeSql("SELECT * FROM {my_aspnet_Sessions} WHERE SessionID=:id AND UserID=:userid");
-		$stmt = $this->db->prepare($sql);
-		$stmt->bindValue("id",$this->getSessionId());
-		$stmt->bindValue("userid",$this->UserID);
-		$stmt->execute();
+		$sql = Database::finalizeSql("SELECT * FROM {my_aspnet_Sessions} WHERE SessionID=? AND UserID=?");
+		$stmt = $this->conn->db->prepare($sql);
+		$stmt->execute(array(session_id(), $this->UserID));
 		if(1 === $stmt->rowCount()) return true;
 	}
 }
