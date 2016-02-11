@@ -245,8 +245,8 @@ class Session
 		if($this->hasAuthenticatedSession()) return true;
 		$query = Database::finalizeSql("UPDATE {my_aspnet_Sessions} SET UserID=:userid WHERE SessionID=:id");
 		$stmt = $this->db->prepare($query);
-		$stmt->bindValue("userid",$UserID);
 		$stmt->bindValue("id",$this->getSessionId());
+		$stmt->bindValue("userid",$UserID);
 		$stmt->execute();
 		$affected_rows = $stmt->rowCount();  
 		if($affected_rows > 0)
@@ -264,7 +264,8 @@ class Session
 	
 	public function hasAuthenticatedSession()
 	{
-		if(!$this->UserID) return false;
+		// print "<br />Method is: ".__METHOD__;
+		// print "<br />User id is: ".(is_null($this->UserID)?"NULL":$this->UserID);
 		$sql = Database::finalizeSql("SELECT * FROM {my_aspnet_Sessions} WHERE SessionID=:id AND UserID=:userid");
 		$stmt = $this->db->prepare($sql);
 		$stmt->bindValue("id",$this->getSessionId());
