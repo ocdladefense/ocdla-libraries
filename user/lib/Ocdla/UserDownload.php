@@ -72,13 +72,30 @@ class UserDownload
 
 	public function __construct($downloadId)
 	{	
-		if(empty($downloadId)) throw new \Exception('Class UserDownload: constructor expects parameter downloadId.');
+		if(empty($downloadId))
+		{
+			throw new \Exception('Class UserDownload: constructor expects parameter downloadId.');
+		}
+		
+		$d = db_query('SELECT Order_ID, memberid, productid FROM {downloads} WHERE i=:downloadId',
+			array( 'downloadId' => $downloadId),'pdo');
+		$d = $d->fetch();
+		
+		$u = db_query('SELECT id FROM {members} WHERE id=:id',
+			array( 'id' => $d['memberid']), 'pdo')->fetch();
+		if(!$u)
+		{
+			throw new \Exception("There is no valid member affiliated with this download (Download id: {$downloadId}; member.id: {$d['memberid']})");
+		}
 		
 		$stmt = db_query('SELECT m.username, m.name_first, m.name_last, m.autoId, m.id AS memberId, cat.i AS productId, cat.DownloadLocation, cat.Item, cat.SoftwareType, d.* FROM {members} m LEFT JOIN {downloads} d ON(m.id=d.memberid) JOIN {catalog} cat ON(cat.i=d.productid) WHERE d.i=:downloadId',
 			array('downloadId'=>$downloadId),'pdo');
 		
 		$info = $stmt->fetch();
-		if(!$info) throw new \Exception("No download with id, {$downloadId}, exists!");
+		if(!$info)
+		{
+			throw new \Exception("No download with id, {$downloadId}, exists!");
+		}
 		
 		$this->productId 				= $info['productId'];
 		

@@ -132,6 +132,7 @@ class Session
 	  if($stmt->execute()) return true;
 	  else return false;
 	} 
+
  
 	public function _gc($max)
 	{
