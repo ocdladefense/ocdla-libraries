@@ -213,7 +213,7 @@ class UserDownload
 	{	
 		if ($this->type != "pdf")
 		{
-			throw new \Exception('Class UserDownload: function createUserPdf being invoked on a non-pdf UserDownload instance!'); 
+			throw new \Exception("{$this->getDownloadId()}: Class UserDownload: function createUserPdf being invoked on a non-pdf UserDownload instance!"); 
 		}
 		
 		if (chdir(self::$sourcePath)&&$this->fileExists())
@@ -222,7 +222,7 @@ class UserDownload
 		}
 		else
 		{
-			throw new \Exception("Could not change directory to ".self::$sourcePath .' or the file, '.$this->filename .', does not exist.');
+			throw new \Exception("{$this->getDownloadId()}: Could not change directory to ".self::$sourcePath .' or the file, '.$this->filename .', does not exist.');
 		}
 		return $return_var;
 	}
