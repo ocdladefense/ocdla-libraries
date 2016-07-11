@@ -37,7 +37,7 @@ class UserDownloadManager
 	private function checkDownloadAndAdd($entry)
 	{
 		$d = new UserDownload($entry['downloadId']);
-		if(empty($download->getUserId()))
+		if(empty($d->getUserId()))
 		{
 			throw new \Exception("There is no valid member affiliated with this download (Download id: {$downloadId}; member.id: {$download->userId})");
 		}
