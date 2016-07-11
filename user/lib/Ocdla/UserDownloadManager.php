@@ -27,9 +27,21 @@ class UserDownloadManager
 		// Query for downloads that have not been processed
 		$stmt = db_query('SELECT memberid AS memberId, i AS downloadId FROM {downloads} WHERE notification_time IS NULL AND file_creation_time>=:time',array('time'=>$time),'pdo');
 		$results = $stmt->fetchAll();
-		array_walk($results,function($entry){
-			$this->addDownload(new UserDownload($entry['downloadId']));
-		});
+		foreach($results as $entry)
+		{
+			$this->checkDownloadAndAdd($entry);
+		}
+		return count($results);
+	}
+	
+	private function checkDownloadAndAdd($entry)
+	{
+		$d = new UserDownload($entry['downloadId']);
+		if(empty($download->getUserId()))
+		{
+			throw new \Exception("There is no valid member affiliated with this download (Download id: {$downloadId}; member.id: {$download->userId})");
+		}
+		$this->addDownload($d);
 	}
 	
 	public function addDownload(UserDownload $download)
@@ -47,6 +59,7 @@ class UserDownloadManager
 	
 	public function notify()
 	{
+		/*
 		array_walk($this->c,function(UserDownloadCollection $downloads){
 			try
 			{
@@ -58,6 +71,19 @@ class UserDownloadManager
 				print $e;
 			}
 		});
+		*/
+		foreach($this->c as $downloads)
+		{
+			try
+			{
+				$this->sendEmailNotification($downloads);
+				$this->updateFileNotificationTime($downloads);
+			}
+			catch(\Exception $e)
+			{
+				print $e;
+			}
+		}
 	}
 	
 	public function notifyAdmin()
