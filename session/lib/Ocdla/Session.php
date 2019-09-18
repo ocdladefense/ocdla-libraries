@@ -23,7 +23,6 @@ class Session
 	public function __construct($params = null)
 	{
 
-		
 		// Instantiate new Database object
 		if(get_class($params)=='Doctrine\DBAL\Connection')
 		{
@@ -45,7 +44,7 @@ class Session
 		);
 	   
 
-		session_name(\getSessionName());//$params['cookieName']);
+		session_name($params['cookieName']);
 		session_set_cookie_params($params['cookieExpiry'],$params['cookiePath'],$params['cookieDomain']);
 		session_start(); 
 	}
