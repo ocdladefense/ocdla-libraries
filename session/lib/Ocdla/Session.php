@@ -20,16 +20,14 @@ class Session
  	
  	protected $errors = array();
  
-	public function __construct($frameworkObject=null)
+	public function __construct($params = null)
 	{
+
+		
 		// Instantiate new Database object
-		if(get_class($frameworkObject)=='Doctrine\DBAL\Connection')
+		if(get_class($params)=='Doctrine\DBAL\Connection')
 		{
-			$this->db = $frameworkObject;
-		}
-		else if (isset($frameworkObject))
-		{
-			$this->db = $frameworkObject->get('database_connection');
+			$this->db = $params;
 		}
 		else
 		{
@@ -45,9 +43,10 @@ class Session
 		  array($this, "_destroy"),
 		  array($this, "_gc")
 		);
-	  
-		session_name(getSessionName());
-		session_set_cookie_params(60*60*24*30,'/','.ocdla.org');
+	   
+
+		session_name(\getSessionName());//$params['cookieName']);
+		session_set_cookie_params($params['cookieExpiry'],$params['cookiePath'],$params['cookieDomain']);
 		session_start(); 
 	}
 	
