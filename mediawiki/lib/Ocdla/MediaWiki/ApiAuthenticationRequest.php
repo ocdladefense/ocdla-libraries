@@ -22,6 +22,10 @@ class ApiAuthenticationRequest
 	protected $cookie;
 	
 	protected $cookiefile;
+	
+	private $header;
+	
+	private $body;
 
 	private $initParams;
 	
@@ -60,6 +64,8 @@ class ApiAuthenticationRequest
 		);
 	}
 
+
+
 	public function doAuthentication()
 	{
 		$this->sendInitialRequest();
@@ -72,12 +78,24 @@ class ApiAuthenticationRequest
 		{
 			throw new AuthenticationException($this);
 		}
+		
+		
 		return true;
 	}
+
+
 
 	private function doRequest($params)
 	{
 		return $this->doCurlRequest($this->apiUrl,$this->formatRequestBody($params),$this->cookiefile);
+	}
+	
+	public function getHeader(){
+		return $this->header;
+	}
+	
+	public function getBody(){
+		return $this->body;
 	}
 	
 	private function doCurlRequest( $url, $body, $cookiefile )
@@ -95,11 +113,17 @@ class ApiAuthenticationRequest
 		curl_setopt($ch, 		CURLOPT_HEADER, 1);
 		$response = curl_exec ($ch);
 		$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-		$header = substr($response, 0, $header_size);
-		$body = substr($response, $header_size);
-		curl_close ($ch);
-		return array('header'=>$header, 'response_body'=>$body);
+		
+		$this->header = substr($response, 0, $header_size);
+		$this->body = substr($response, $header_size);
+		
+		curl_close($ch);
+		
+		
+		return array('header'=>$this->header, 'response_body'=>$this->body);
 	}
+	
+	
 	
 	protected function sendInitialRequest()
 	{
@@ -107,6 +131,8 @@ class ApiAuthenticationRequest
 		$this->initRespParser = new ApiLoginResponseParser($init['response_body']);
 		$this->lgtoken=$this->initRespParser->getToken();
 	}
+
+
 
 	protected function sendAuthenticationRequest()
 	{

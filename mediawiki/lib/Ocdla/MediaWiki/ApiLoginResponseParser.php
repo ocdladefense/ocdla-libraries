@@ -22,16 +22,38 @@ class ApiLoginResponseParser
 	
 	private $xml;
 	
+	private $header;
+	
+	
+	
+	public function getBody(){
+		return $this->xml;
+	}
+	
+	public function getHeader(){
+		return $this->header;
+	}
+	
 	public function __get($prop)
 	{
 		return $this->{$prop};
 	}
 	
-	public function __construct($xml)
+	public function __construct($xml,$header)
 	{
+		$this->xml = $xml;
+		$this->header = $header;
+		
+		
+		if(empty($xml)) {
+			throw new Exception('Could not log onto to Library of Defense.');
+		}
+		
+		
 		$d = new \DOMDocument() and $d->preserveWhiteSpace = false and $d->formatOutput=true;
 		$d->loadXML($xml);
-		if(empty($xml)) throw new Exception('Could not log onto to Library of Defense.');
+		
+
 		$this->xml = $d->saveXML();
 		$this->attributes = $d->getElementsByTagName('login')->item(0)->attributes;	
 		$login=$d->getElementsByTagName('login')->item(0);
