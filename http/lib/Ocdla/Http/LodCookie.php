@@ -6,14 +6,14 @@ class LodCookie
 {
 	protected $cookieFilePath;
 	
-	public function __construct($UserID)
+	public function __construct($uid, $mode = 'r')
 	{
-		$this->cookieFilePath = COOKIE_PATH . '/cookiefile_'.$UserID.'.txt';
+		$this->cookieFilePath = COOKIE_PATH . '/cookiefile_'.$uid.'.txt';
 
 
-		if( !$h = fopen( $this->cookieFilePath, 'w') )
+		if( !$h = fopen( $this->cookieFilePath, $mode) )
 		{
-			throw new Exception('Error trying to open cookie file.');
+			throw new Exception('Error trying to access cookie file: '.$this->cookieFilePath);
 		}
 
 		fclose($h);
@@ -22,5 +22,7 @@ class LodCookie
 	{
 		return $this->cookieFilePath;
 	}
+	
+
 
 }

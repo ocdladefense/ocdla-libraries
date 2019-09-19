@@ -3,12 +3,12 @@
 
 namespace Ocdla\MediaWiki;
 
-use Ocdla\Http\LodCookie as LodCookie;
-use Ocdla\MediaWikiException\AuthenticationException as AuthenticationException;
+use Ocdla\Http\LodCookie;
+use Ocdla\MediaWikiException\AuthenticationException;
 
 
 
-class ApiAuthenticationRequest
+class MediaWikiApiAuthenticationRequest
 {
 	const API_RESPONSE_FORMAT = 'xml';
 	
@@ -27,20 +27,32 @@ class ApiAuthenticationRequest
 	private $header;
 	
 	private $body;
+	
+	private $token;
 
 	private $loginRespParser;
 	
-	private $cookies = array( 'sessionid' => 'session', 'lguserid'=>'UserID', 'lgusername' => 'UserName', 'lgtoken' => 'Token');
+	private static $cookieClass = "\\Ocdla\\Http\\LodCookie";
+
+
+	public function __construct($url) {
+		$this->endpoint = $url;
+	}
+	
 	
 
-		$this->loginParams = array(
-			'action'			=> 'login',
-			'lgname'			=> $username,
-			'lgpassword'	=> $password,
-			'format'			=> self::API_RESPONSE_FORMAT,
-		);
+	public function setUserId($uid){
+		$this->uid = $uid;
 	}
 
+	
+	public function setUsername($username){
+		$this->username = $username;
+	}	
+	
+	public function setPassword($password){
+		$this->password = $password;
+	}
 
 	
 	public function getHeader(){
@@ -64,6 +76,7 @@ class ApiAuthenticationRequest
 			'lgpassword'	=> $this->password,
 			'format'			=> self::API_RESPONSE_FORMAT
 		);
+		$params += array('lgtoken' => $this->token);
 		
 		
 		$this->body = $this->formatRequestBody($params);
@@ -78,26 +91,26 @@ class ApiAuthenticationRequest
 		curl_setopt($ch, 		CURLOPT_POSTFIELDS, $this->body);
 		curl_setopt($ch, 		CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, 		CURLOPT_COOKIEFILE, $this->cookiefile);
-		curl_setopt($ch, 		CURLOPT_COOKIEJAR, $this->cookiefile);
 		curl_setopt($ch, 		CURLOPT_VERBOSE, 0);
 		curl_setopt($ch, 		CURLOPT_HEADER, 1);
-		$response = curl_exec($ch);
-		$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+		$response 			= curl_exec($ch);
+		$header_size 		= curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 		
 		$header = substr($response, 0, $header_size);
 		$body = substr($response, $header_size);
 		
 		curl_close($ch);
-		
-		
+
 
 		return new ApiLoginResponseParser($body,$header);
 	}
 
+	
 
 
-	private function setToken($token){
-		$this->token = token;
+
+	public function setToken($token){
+		$this->token = $token;
 	}
 
 

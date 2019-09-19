@@ -8,7 +8,7 @@ class AuthenticationException extends \Exception
 	private $ApiQuery;
 	private $ApiResult;
 	
-	public function __construct( $ApiQuery, $ApiResult )
+	public function __construct( $ApiQuery = null, $ApiResult = null )
 	{
 		parent::__construct('MediaWikiApi Login Failure');
 		$this->ApiQuery = $ApiQuery;

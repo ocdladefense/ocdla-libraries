@@ -84,10 +84,15 @@ class MediaWikiApiRequest {
 		return $this->body;
 	}
 	
+	public function getCookiePath(){
+		return $this->cookiefile;
+	}
+	
 	public function send()
 	{
 		
-		$cookie = new self::$cookieClass($this->uid);
+		// Make sure cookie can be created and opened for writing.
+		$cookie = new self::$cookieClass($this->uid, 'w');
 		
 		$this->cookiefile = $cookie->getFilePath();
 		
@@ -104,13 +109,13 @@ class MediaWikiApiRequest {
 		
 		
 		$ch = curl_init($this->endpoint);
+		curl_setopt($ch, 		CURLOPT_COOKIESESSION, true);
 		curl_setopt($ch, 		CURLOPT_POST, true);
 		// curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.9) Gecko/20071025 Firefox/2.0.0.9');
 		curl_setopt($ch, 		CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, 		CURLOPT_ENCODING, "UTF-8" );
 		curl_setopt($ch, 		CURLOPT_POSTFIELDS, $this->body);
 		curl_setopt($ch, 		CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, 		CURLOPT_COOKIEFILE, $this->cookiefile);
 		curl_setopt($ch, 		CURLOPT_COOKIEJAR, $this->cookiefile);
 		curl_setopt($ch, 		CURLOPT_VERBOSE, 0);
 		curl_setopt($ch, 		CURLOPT_HEADER, 1);

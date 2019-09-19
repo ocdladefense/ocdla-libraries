@@ -10,6 +10,8 @@ class ApiLoginResponseParser
 	
 	private $token;
 	
+	private $cookies;
+	
 	private $cookieprefix;
 	
 	private $sessionid;
@@ -43,7 +45,7 @@ class ApiLoginResponseParser
 	{
 		$this->xml = $xml;
 		$this->header = $header;
-		
+		$this->initCookies($header);
 		
 		if(empty($xml)) {
 			throw new Exception('Could not log onto to Library of Defense.');
@@ -67,18 +69,52 @@ class ApiLoginResponseParser
 		$this->lguserid 			= $login->getAttribute('lguserid');
 		$this->lgusername 		= $login->getAttribute('lgusername');
 	}
+	
+	
+	private function initCookies($header){
+		if(empty($header)){
+			$this->cookies = array();
+			return;
+		}
+		
+		preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $header, $matches);
+		
+		
+		$cookies = array();
+		
+		foreach($matches[1] as $item) {
+			parse_str($item, $cookie);
+			$cookies = array_merge($cookies, $cookie);
+		}
+		
+		$this->cookies = $cookies;
+	}
+	
+	
+	
+	public function getCookies(){
+		return $this->cookies;
+	}
+	
+	
 	public function getXml()
 	{
 		return $this->xml;
 	}
+	
+	
 	public function getResult()
 	{
 		return $this->result;
 	}	
+	
+	
 	public function getToken()
 	{
 		return $this->token;
 	}
+	
+	
 	public function __toString()
 	{
 		return "<pre>".htmlspecialchars($this->xml)."</pre>";
