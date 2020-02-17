@@ -42,11 +42,6 @@ class Session
 		  array($this, "_destroy"),
 		  array($this, "_gc")
 		);
-	   
-
-		session_name($params['cookieName']);
-		session_set_cookie_params($params['cookieExpiry'],$params['cookiePath'],$params['cookieDomain']);
-		session_start(); 
 	}
 	
 	/**
