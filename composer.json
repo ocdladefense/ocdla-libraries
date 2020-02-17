@@ -1,5 +1,4 @@
 {
-	"version": "1.0.1",
     "name": "clickpdx/ocdla", 
     "type": "library",
     "autoload": {
@@ -7,7 +6,7 @@
             "Ocdla\\": ["user/lib","session/lib","saml/lib","product/lib","pdo/lib","member/lib","mediawiki/lib","http/lib","auth/lib"]
         }
     },
-    "description": "Ocdla services.",
+    "description": "OCDLA services.",
     "keywords": ["clickpdx service","service"],
     "homepage": "https://github.com/ocdladefense/ocdla-libraries", 
     "license": "MIT",
